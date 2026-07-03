@@ -90,10 +90,13 @@ At the `(tdb)` prompt:
 | `n` / `next` | next command at this depth or shallower (steps over calls) |
 | `f` / `finish` | run until the current function returns |
 | `c` / `continue` | run until a breakpoint |
+| `u <line>` | run until that line in the current file (one-shot) |
 | *enter* | repeat the last motion command |
 | `b 13` · `b utils.sh:40` | breakpoint |
 | `b 13 if (( count == 2 ))` | conditional breakpoint — the condition is **raw bash** run in the script: `(( … ))`, `[[ … ]]`, even `grep -q …` |
 | `bl` / `d <id>` | list / delete breakpoints |
+| `w <bash-expr>` | watch: evaluated in the script and shown at every stop (`w $count`) |
+| `wl` / `wd <id>` | list / delete watches |
 | `p var…` | `declare -p` variables (arrays and maps print properly) |
 | `x code` / `!code` | run bash in the live script — **assignments stick** |
 | `bt` | backtrace |
