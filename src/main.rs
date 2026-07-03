@@ -103,12 +103,14 @@ fn die(msg: &str) -> ! {
 
 // ------------------------------------------------------------------ model
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 enum RunMode {
     Step,
     Next(u32),
     Finish(u32),
     Continue,
+    /// One-shot: stop the first time execution reaches file:line.
+    Until { file: String, line: u32 },
 }
 
 struct Breakpoint {
@@ -158,6 +160,8 @@ struct Session {
     detached: bool,
     src_cache: HashMap<String, Option<Vec<String>>>,
     script: String,
+    watches: Vec<(u32, String)>,
+    next_watch_id: u32,
 }
 
 enum ReplOutcome {
@@ -290,6 +294,47 @@ impl Session {
         }
     }
 
+    // ----------------------------------------------------------- watches
+
+    fn add_watch(&mut self, expr: &str) {
+        let id = self.next_watch_id;
+        self.next_watch_id += 1;
+        self.watches.push((id, expr.to_string()));
+        println!("{}watch #{}{}: {}", self.pal.green, id, self.pal.reset, expr);
+    }
+
+    fn show_watches(&mut self) {
+        // Clone first: remote_eval needs &mut self while we iterate.
+        let watches = self.watches.clone();
+        for (id, expr) in &watches {
+            let (out, _) = self.remote_eval(&format!("printf '%s\\n' \"{expr}\""));
+            println!(
+                "  {}watch #{}: {} = {}{}",
+                self.pal.dim, id, expr, out.trim_end_matches('\n'), self.pal.reset
+            );
+        }
+    }
+
+    fn list_watches(&self) {
+        if self.watches.is_empty() {
+            println!("no watches");
+            return;
+        }
+        for (id, expr) in &self.watches {
+            println!("  #{id}  {expr}");
+        }
+    }
+
+    fn delete_watch(&mut self, id: u32) {
+        let before = self.watches.len();
+        self.watches.retain(|(wid, _)| *wid != id);
+        if self.watches.len() == before {
+            println!("no watch #{id}");
+        } else {
+            println!("deleted watch #{id}");
+        }
+    }
+
     // ------------------------------------------------------------ source
 
     fn source_lines(&mut self, file: &str) -> Option<&Vec<String>> {
@@ -388,6 +433,27 @@ impl Session {
                     let _ = self.send("GO");
                     return ReplOutcome::Resume;
                 }
+                "u" | "until" => match rest.parse::<u32>() {
+                    Ok(n) => {
+                        // One-shot: not stored as last_motion on purpose.
+                        self.mode = RunMode::Until { file: src.to_string(), line: n };
+                        let _ = self.send("GO");
+                        return ReplOutcome::Resume;
+                    }
+                    Err(_) => println!("usage: u <line>"),
+                },
+                "w" | "watch" => {
+                    if rest.is_empty() {
+                        println!("usage: w <bash-expr>   e.g.  w $count");
+                    } else {
+                        self.add_watch(&rest);
+                    }
+                }
+                "wl" => self.list_watches(),
+                "wd" => match rest.parse::<u32>() {
+                    Ok(id) => self.delete_watch(id),
+                    Err(_) => println!("usage: wd <watch-id>"),
+                },
                 "q" | "quit" => {
                     let _ = self.send("KILL");
                     let _ = child.kill();
@@ -472,11 +538,15 @@ fn print_repl_help() {
   n, next        stop at the next command at this depth or shallower
   f, finish      run until the current function returns
   c, continue    run until a breakpoint
+  u <line>       run until that line in the current file (one-shot)
   <enter>        repeat the last motion command
 breakpoints:
   b <line>                        break in the main script
   b <file>:<line> [if <cond>]     cond is raw bash, e.g.  b 13 if (( count == 2 ))
   bl                              list breakpoints        d <id>   delete one
+watches (evaluated and shown at every stop):
+  w <bash-expr>  add a watch, e.g.  w $count  or  w ${{#items[@]}}
+  wl             list watches       wd <id>    delete one
 inspect / mutate (all run inside the live script):
   p <var>...     declare -p a variable (arrays too)
   x <code>       run any bash code — assignments stick:  x count=99
@@ -574,6 +644,8 @@ fn main() {
         detached: false,
         src_cache: HashMap::new(),
         script: opts.script.clone(),
+        watches: Vec::new(),
+        next_watch_id: 1,
     };
     for spec in &opts.breaks {
         sess.add_breakpoint(spec);
@@ -597,19 +669,25 @@ fn main() {
         }
 
         let bp = sess.breakpoint_hit(&src, line);
-        let stop = bp.is_some()
-            || match sess.mode {
-                RunMode::Step => true,
-                RunMode::Next(d) => depth <= d,
-                RunMode::Finish(d) => depth < d,
-                RunMode::Continue => false,
-            };
+        let mode_stop = match &sess.mode {
+            RunMode::Step => true,
+            RunMode::Next(d) => depth <= *d,
+            RunMode::Finish(d) => depth < *d,
+            RunMode::Continue => false,
+            RunMode::Until { file, line: l } => paths_match(file, &src) && *l == line,
+        };
+        let stop = bp.is_some() || mode_stop;
         if !stop {
             let _ = sess.send("GO");
             continue;
         }
+        // An `until` target is one-shot: disarm it as soon as it fires.
+        if mode_stop && matches!(sess.mode, RunMode::Until { .. }) {
+            sess.mode = RunMode::Step;
+        }
 
         sess.announce(&src, line, depth, &cmd, bp);
+        sess.show_watches();
         match sess.repl(&src, line, depth, &mut child) {
             ReplOutcome::Resume => {}
             ReplOutcome::Quit => {
