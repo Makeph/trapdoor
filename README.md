@@ -37,6 +37,9 @@ processed 43 fruits, total=602
 
 That `43` is not a typo — `!count=40` rewrote the loop counter in the running script.
 
+New here? The [15-minute tutorial](docs/TUTORIAL.md) walks from first `step` to
+patching a live script's variables mid-run.
+
 ## How it works
 
 ```
