@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "trapdoor-sh"
+# Version is read from Cargo.toml by maturin — single source of truth.
+dynamic = ["version"]
+description = "An interactive step-debugger for Bash scripts - no patched bash, no ptrace, just the DEBUG trap and /dev/tcp. Ships the Rust binary as a console script, ruff-style."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Makeph" }]
+keywords = ["bash", "debugger", "shell", "devtools", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Debuggers",
+]
+
+[project.urls]
+Homepage = "https://github.com/Makeph/trapdoor"
+Repository = "https://github.com/Makeph/trapdoor"
+Issues = "https://github.com/Makeph/trapdoor/issues"
+
+[tool.maturin]
+bindings = "bin"
+strip = true
