@@ -1,6 +1,6 @@
 # trapdoor
 
-**An interactive step-debugger for Bash scripts — built entirely out of things bash already ships.**
+**An interactive step-debugger for Bash scripts built entirely out of things bash already ships.**
 
 ![trapdoor demo](docs/assets/demo.gif)
 
