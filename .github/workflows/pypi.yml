@@ -21,7 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        # macos-13 (Intel) omitted: its runner queue stalls for hours and blocks
+        # publish. Intel-mac users install from the sdist.
+        runner: [ubuntu-latest, windows-latest, macos-14]
     steps:
       - uses: actions/checkout@v4
       - uses: PyO3/maturin-action@v1
