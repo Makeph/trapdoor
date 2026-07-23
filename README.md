@@ -2,6 +2,8 @@
 
 **An interactive step-debugger for Bash scripts — built entirely out of things bash already ships.**
 
+![trapdoor demo](docs/assets/demo.gif)
+
 No patched bash. No `ptrace`. No `set -x` archaeology. The debugger side of trapdoor is
 ~60 lines of pure bash injected through `BASH_ENV`; it talks to a Rust controller over
 `/dev/tcp`, bash's built-in TCP socket. The `DEBUG` trap does the rest: every command in
@@ -28,14 +30,21 @@ examples/demo.sh:13 [depth 1] ● breakpoint #1
 (tdb) p count fruit
 declare -- count="1"
 declare -- fruit="banana"
+(tdb) w $count
+watch #1: $count
+(tdb) s
+examples/demo.sh:14 [depth 1]
+  → greet "$fruit"
+  watch #1: $count = 2
 (tdb) !count=40
 (tdb) c
 hello, banana
 hello, cherry
-processed 43 fruits, total=602
+processed 41 fruits, total=574
 ```
 
-That `43` is not a typo — `!count=40` rewrote the loop counter in the running script.
+That `41` is real: we watched `count` tick to `2`, then forced it to `40` mid-run
+with `!count=40` — and the running script finished the loop from there.
 
 New here? The [15-minute tutorial](docs/TUTORIAL.md) walks from first `step` to
 patching a live script's variables mid-run.
