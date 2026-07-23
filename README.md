@@ -1,8 +1,8 @@
-# trapdoor
+<p align="center">
+  <img src="docs/assets/banner.png" alt="trapdoor" width="640">
+</p>
 
 **An interactive step-debugger for Bash scripts built entirely out of things bash already ships.**
-
-![trapdoor demo](docs/assets/demo.gif)
 
 No patched bash. No `ptrace`. No `set -x` archaeology. The debugger side of trapdoor is
 ~60 lines of pure bash injected through `BASH_ENV`; it talks to a Rust controller over
@@ -20,28 +20,7 @@ Change a variable mid-loop and watch the script take the other branch.
 
 ## Demo
 
-```console
-$ trapdoor -b 'demo.sh:13 if (( count == 1 ))' -r examples/demo.sh
-breakpoint #1 at demo.sh:13  if (( count == 1 ))
-hello, apple
-
-examples/demo.sh:13 [depth 1] ● breakpoint #1
-  → count=$((count + 1))
-(tdb) p count fruit
-declare -- count="1"
-declare -- fruit="banana"
-(tdb) w $count
-watch #1: $count
-(tdb) s
-examples/demo.sh:14 [depth 1]
-  → greet "$fruit"
-  watch #1: $count = 2
-(tdb) !count=40
-(tdb) c
-hello, banana
-hello, cherry
-processed 41 fruits, total=574
-```
+![trapdoor demo](docs/assets/demo.gif)
 
 That `41` is real: we watched `count` tick to `2`, then forced it to `40` mid-run
 with `!count=40` — and the running script finished the loop from there.
