@@ -54,19 +54,23 @@ patching a live script's variables mid-run.
 
 ## Install
 
+Prebuilt wheels for Linux, macOS and Windows — no Rust toolchain needed:
+
+```sh
+pip install trapdoor-sh          # installs the `trapdoor` binary
+```
+
+With cargo instead:
+
 ```sh
 cargo install --git https://github.com/Makeph/trapdoor
+cargo install --path .           # or, from a clone
 ```
 
-Or, from a clone:
-
-```sh
-cargo install --path .          # or: cargo build --release
-```
-
-> **Note:** trapdoor is not on crates.io — that name is taken by an unrelated crate,
-> so `cargo install trapdoor` will fetch something else entirely. Use the `--git`
-> form above.
+> **Note on names:** the package is `trapdoor-sh` because `trapdoor` was already
+> taken on both PyPI and crates.io by unrelated projects. `pip install trapdoor`
+> and `cargo install trapdoor` will fetch something else entirely. The binary is
+> still called `trapdoor`.
 
 One static-ish binary, zero crate dependencies (`std` only). Works anywhere bash is
 compiled with `/dev/tcp` support — Linux distros, macOS, and Git Bash / MSYS2 on
