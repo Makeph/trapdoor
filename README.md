@@ -55,8 +55,18 @@ patching a live script's variables mid-run.
 ## Install
 
 ```sh
+cargo install --git https://github.com/Makeph/trapdoor
+```
+
+Or, from a clone:
+
+```sh
 cargo install --path .          # or: cargo build --release
 ```
+
+> **Note:** trapdoor is not on crates.io — that name is taken by an unrelated crate,
+> so `cargo install trapdoor` will fetch something else entirely. Use the `--git`
+> form above.
 
 One static-ish binary, zero crate dependencies (`std` only). Works anywhere bash is
 compiled with `/dev/tcp` support — Linux distros, macOS, and Git Bash / MSYS2 on
