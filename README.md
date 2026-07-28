@@ -1,3 +1,5 @@
+[![CI](https://github.com/Makeph/trapdoor/actions/workflows/ci.yml/badge.svg)](https://github.com/Makeph/trapdoor/actions)
+
 <p align="center">
   <img src="docs/assets/banner.png" alt="trapdoor" width="640">
 </p>
